@@ -1,0 +1,22 @@
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.venv/
+venv/
+env/
+
+# Scrapy artifacts
+*.log
+
+# DB / outputs
+*.sqlite
+*.db
+*.jsonl
+*.jl
+*.csv
+
+# OS
+.DS_Store
+Thumbs.db
