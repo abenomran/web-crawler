@@ -16,6 +16,7 @@ env/
 *.jsonl
 *.jl
 *.csv
+web_archive.json
 
 # OS
 .DS_Store
