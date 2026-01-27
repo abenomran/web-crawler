@@ -24,7 +24,7 @@ The project also includes a Jupyter notebook that:
 ## Requirements
 
 ### Python Version
-- Python 3.10+ (tested with Python 3.11)
+- Tested with Python 3.11
 
 ### Python Packages
 It's recommended to create a virtual environment, from there install dependencies:
