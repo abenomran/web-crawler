@@ -21,7 +21,7 @@ DENY = (
         "tel:",
         "jupiter.cc.gatech.edu",
         "www-static.cc.gatech.edu",
-        "konom.cc.gatech.edu"
+        "konom.cc.gatech.edu",
         "saopaulo.cc.gatech.edu",
         "ftp.cc.gatech.edu",
         "www-int.cc.gatech.edu",
@@ -35,14 +35,19 @@ DENY = (
         "rs2023.cc.gatech.edu",
         "cc-sox.cc.gatech.edu",
         "staff-feedback.cc.gatech.edu",
-        "grad.cc.gatech.edu"
+        "grad.cc.gatech.edu",
+        "repository.gatech.edu",
+        "sso.gatech.edu",
+        "ehsa.gatech.edu",
+        "slash.gatech.edu",
+        "gcatt.gatech.edu"
     )
 DENY_EXTENSIONS = [
         "pdf", "doc", "docx", "ppt", "pptx", "xls", "xlsx",
         "zip", "rar", "7z", "jpg", "jpeg", "png", "gif", 
         "svg", "webp", "mp3", "mp4", "mov", "avi", "exe",
         "ps", "gz", "eps", "tar", "tgz", "mid", "class",
-        "mpg"
+        "mpg", "mpeg", "tar", "ps", "z"
     ]
 
 
@@ -59,9 +64,11 @@ class Page(scrapy.Item):
 
 class GTCCSpider(CrawlSpider):
     name = "gt_cc_crawler"
+    start_urls = ["https://cc.gatech.edu"]
+
     allowed_domains = ["cc.gatech.edu"]
     # allowed_domains = ["gatech.edu"]
-    start_urls = ["https://cc.gatech.edu"]
+    
 
     """
     rules control which links the crawler follows:
@@ -96,6 +103,18 @@ class GTCCSpider(CrawlSpider):
         self.discovered_urls = set()
         self.crawled_urls = set()
 
+        # metrics sets
+        self.encountered_urls_total = 0
+        self.encountered_urls_unique = set()
+        self.able_urls_unique = set() # passes rules
+        self.crawled_urls_unique = set()
+
+        self.metrics_extractor = LinkExtractor(
+            allow="/",
+            deny=DENY,
+            deny_extensions=DENY_EXTENSIONS
+        )
+
         # subsequently, I will be logging the following information in a csv file to use for plots later
         self.log_file = open("crawl_log.csv", "w", newline="", encoding="utf-8")
         self.logger_csv = csv.writer(self.log_file)
@@ -109,7 +128,11 @@ class GTCCSpider(CrawlSpider):
             "page_keywords",
             "urls_able_to_crawl",
             "urls_crawled",
-            "urls_remaining"
+            "urls_remaining",
+            "encountered_urls_total",
+            "encountered_urls_unique",
+            "able_urls_unique",
+            "crawled_urls_unique",
         ])
 
     # need to override this method so Scrapy properly saves the log file when it is done crawling
@@ -165,6 +188,14 @@ class GTCCSpider(CrawlSpider):
             out_links.append(absolute_url)
             # update crawl frontier to add more urls
             self.discovered_urls.add(absolute_url)
+            self.encountered_urls_total += 1
+            self.encountered_urls_unique.add(absolute_url)
+        
+        # urls that pass rules
+        able_links = self.metrics_extractor.extract_links(response)
+        able_urls = {link.url for link in able_links}
+        self.able_urls_unique.update(able_urls)
+
 
         # save data in page item
         page = Page()
@@ -184,6 +215,10 @@ class GTCCSpider(CrawlSpider):
         urls_able_to_crawl = len(self.discovered_urls)
         urls_crawled = len(self.crawled_urls)
         urls_remaining = urls_able_to_crawl - urls_crawled
+        encountered_total = self.encountered_urls_total
+        encountered_unique = len(self.encountered_urls_unique)
+        able_unique = len(self.able_urls_unique)
+        crawled_unique = len(self.crawled_urls)
 
         self.logger_csv.writerow([
             self.page_count,
@@ -195,7 +230,11 @@ class GTCCSpider(CrawlSpider):
             page_keywords,
             urls_able_to_crawl,
             urls_crawled,
-            urls_remaining
+            urls_remaining,
+            encountered_total,
+            encountered_unique,
+            able_unique,
+            crawled_unique
         ])
         self.log_file.flush()
 
